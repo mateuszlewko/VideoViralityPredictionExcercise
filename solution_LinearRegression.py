@@ -1,4 +1,6 @@
 from math import log, e
+import matplotlib.pyplot as plot
+
 
 FILE_NAME = 'data.csv'
 LAST = 167
@@ -16,6 +18,15 @@ Y = [item[LAST] for item in data]
 Ylog = map(lambda x: log(x), Y)
 X = []
  
-print Ylog
+#print Ylog
 
- 
+for day in [6, 24, 72, 168]:
+    d = [item[day - 1] for item in data]
+    
+    plot.hist(d, bins=250)
+    plot.title('Original, up to day: ' + str(day))
+    plot.show()
+    
+    plot.hist(map(lambda x: log(x), d), bins=250)
+    plot.title('Log(x), up to day: ' + str(day))
+    plot.show()
