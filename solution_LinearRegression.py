@@ -3,7 +3,7 @@ from sklearn import linear_model
 from random import shuffle
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plot
-
+import numpy as np
 
 FILE_NAME = 'data.csv'
 LAST = 167
@@ -22,8 +22,8 @@ print 'train cnt:', TRAIN_CNT
 
 Y = [item[LAST] for item in data]
 Y_log = map(lambda x: log(x), Y)
-X = []
 
+#X_multi_lr
 X_lr = []
 X_lr_log = []
 
@@ -35,16 +35,29 @@ for item in data:
     X_lr.append(regr.coef_[0])
     X_lr_log.append(log(regr.coef_[0]))
     
-#print Y_log
+    
+# exclude outliers #
+excluded_outliers_inds = set()  # outliers indexes
+mean = np.mean(Y)
+std = np.std(Y)
+
+print 'mean:', mean, '| std:', std
+
+for ind in xrange(len(Y)):
+    if abs(Y[ind] - mean) > std * 3:
+        excluded_outliers_inds.add(ind)
+        
+print 'excluded outliers count:', len(excluded_outliers_inds)
 
 # train LinearRegression model #
-train_regr = linear_model.LinearRegression()
-train_regr.fit([[val] for val in X_lr_log[:TRAIN_CNT]], Y_log[:TRAIN_CNT])
+train_regr = linear_model.LinearRegression()    
+train_regr.fit([[val] for ind, val in enumerate(X_lr_log[:TRAIN_CNT]) if ind not in excluded_outliers_inds], \
+                [y for ind, y in enumerate(Y_log[:TRAIN_CNT]) if ind not in excluded_outliers_inds])
 
 
 def plot_distribution():
-    """Distribution for diferrent days and log transformed
-    """
+    """Distribution for diferrent days and log transformed"""
+    
     for day in [6, 24, 72, 168]:
         d = [item[day - 1] for item in data]
         
@@ -58,8 +71,8 @@ def plot_distribution():
     
 
 def plot_LinearRegression():
-    """ plot LinearRegression coeff of first 24 hours and Output (Y - original)
-    """
+    """plot LinearRegression coeff of first 24 hours and Output (Y - original)"""
+    
     plot.scatter(X_lr, Y)
     plot.show()
 
@@ -73,9 +86,6 @@ def plot_LinearRegression():
     plot.scatter(X_lr_log, Y_log)
     plot.show()
 
-
-    train_regr = linear_model.LinearRegression()
-    train_regr.fit([[val] for val in X_lr_log[:TRAIN_CNT]], Y_log[:TRAIN_CNT])
 
 def predict():
     Y_predicted = []
@@ -93,7 +103,7 @@ def predict():
     
     
 if __name__ == '__main__':
-    plot_distribution()
-    plot_LinearRegression()
+    # plot_distribution()
+    # plot_LinearRegression()
     
     predict()
