@@ -53,7 +53,7 @@ print 'excluded outliers count:', len(excluded_outliers_inds)
 train_regr = linear_model.LinearRegression()    
 train_regr.fit([[val] for ind, val in enumerate(X_lr_log[:TRAIN_CNT]) if ind not in excluded_outliers_inds], \
                 [y for ind, y in enumerate(Y_log[:TRAIN_CNT]) if ind not in excluded_outliers_inds])
-
+                               
 
 def plot_distribution():
     """Distribution for diferrent days and log transformed"""
@@ -87,7 +87,7 @@ def plot_LinearRegression():
     plot.show()
 
 
-def predict():
+def predict_lr():
     Y_predicted = []
     error_sum = 0
 
@@ -99,11 +99,62 @@ def predict():
         error_sum += abs(float(pred) / real - 1.0) ** 2
         Y_predicted.append(pred)
         
-    print '\nmRSE:', error_sum / float(len(Y_predicted))
+    print 'predict lr', '\nmRSE:', error_sum / float(len(Y_predicted))
+    
+    
+def predict_simple(n, verbose=False):
+    regr = linear_model.LinearRegression()
+    X = [[val[n]] for val in data]
+    regr.fit(X[:TRAIN_CNT], Y[:TRAIN_CNT])
+
+    Y_predicted = []
+    error_sum = 0
+
+    for x, real in zip([val[n] for val in data[TRAIN_CNT:]], Y[TRAIN_CNT:]):
+        pred = regr.predict(x)[0]
+        
+        if verbose:
+            print 'real:', '%9s' % str(int(real)), '| predicted:', int(pred)
+        
+        error_sum += abs(float(pred) / real - 1.0) ** 2
+        Y_predicted.append(pred)
+        
+    print '%27s' % 'predict simple | n:', n, 'mRSE:', error_sum / float(len(Y_predicted))
+    
+    # multi input LR #
+    regr = linear_model.LinearRegression()
+    X = [val[:n + 1] for val in data]
+    regr.fit(X[:TRAIN_CNT], Y[:TRAIN_CNT])
+
+    Y_predicted = []
+    error_sum_multi = 0
+
+    for x, real in zip([val[:n + 1] for val in data[TRAIN_CNT:]], Y[TRAIN_CNT:]):
+        pred = regr.predict([x])[0]
+        
+        if verbose:
+            print 'real:', '%9s' % str(int(real)), '| predicted:', int(pred)
+        
+        error_sum_multi += abs(float(pred) / real - 1.0) ** 2
+        Y_predicted.append(pred)
+        
+    print '%27s' % 'predict simple multi | n:', n, 'mRSE:', error_sum_multi / float(len(Y_predicted))
+    
+    return error_sum, error_sum_multi
+    
+    
+def plot_models_comparison(stats):
+    plot.plot(range(1, len(stats) + 1), [val[0] for val in stats], color='red')
+    plot.plot(range(1, len(stats) + 1), [val[1] for val in stats], color='green')
+
+    plot.title('red - Linear Regression, green - Multiple input Linear Regression')
+    plot.show()
     
     
 if __name__ == '__main__':
-    # plot_distribution()
-    # plot_LinearRegression()
+    plot_distribution()
+    plot_LinearRegression()
     
-    predict()
+    predict_lr()
+    stats = [predict_simple(x) for x in xrange(X_CNT)]
+    plot_models_comparison(stats)
